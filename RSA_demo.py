@@ -1,3 +1,9 @@
+import pdb
+import sys  
+
+reload(sys)  
+sys.setdefaultencoding('utf8')
+
 class receiver(object):
 	"""person sending the message"""
 	def __init__(self, p, q, try_standard_public_key):
@@ -6,9 +12,15 @@ class receiver(object):
 		self.q = q
 		self.n = p*q
 
-		self.n_totient = phi(self.n)
+		print "calculating phi(n)"
+
+		self.n_totient = phi(self.p, self.q)
+
+		print "choosing public key"
 
 		self.e_public_key = generate_public_key(self, try_standard_public_key)
+
+		print "generating private key"
 
 		self.d_private_key = generate_private_key(self)
 
@@ -18,47 +30,23 @@ class receiver(object):
 
 def isPrime(n):
 	"""Generic algorithm to determine if number is prime
-	http://stackoverflow.com/a/1801446
-	Returns True if n is prime."""
-	if n == 2:
-		return True
-	if n == 3:
-		return True
-	if n % 2 == 0:
-		return False
-	if n % 3 == 0:
-		return False
+	"""
 
-	i = 5
-	w = 2
+	import sympy
 
-	while i * i <= n:
+	return sympy.isprime(n)
 
-		if n % i == 0:
-			return False
 
-		i += w
-		w = 6 - w
-
-	return True
-
-def phi(n):
+def phi(p,q):
 	""" when n is a prime number, phi(n) = n-1. 
 	when m and n are coprime, phi(m*n) = phi(m)*phi(n).
 
 	If the prime factorisation of n is given by n = p_1^e_1 * ... * p_n^e_n
-	then phi(n) = n *(1 - 1/p_1)* ... (1 - 1/p_n)."""
-
-	if isPrime(n):
-		return n-1
-	else:
-		y = n
-
-		for jj in range(2, n+1):
-			if ( isPrime(jj) and (n % jj == 0) ):
-				y *= 1 - 1.0/jj
-
-		return int(y)
+	then phi(n) = n *(1 - 1/p_1)* ... (1 - 1/p_n).
+	
+	if n = p*q, then n*(1 - 1/p)*(1 - 1/q) = n*(p-1)*(q-1)/pq = (p-1)*(q-1)
+	"""
+	return (p-1)*(q-1) 
 
 def is_coprime(m,n):
 	from fractions import gcd 
@@ -70,35 +58,53 @@ def is_coprime(m,n):
 
 	return coprime_bool
 
+def egcd(a, b):
+	if a == 0:
+		return (b, 0, 1)
+	else:
+		g, y, x = egcd(b % a, a)
+		return (g, x - (b // a) * y, y)
+
+def modinv(a, m):
+	"""
+	calulcate solution of a*x mod m = 1 
+	http://stackoverflow.com/a/9758173
+	"""
+	g, x, y = egcd(a, m)
+	if g != 1:
+		raise Exception('modular inverse does not exist')
+	else:
+		return x % m
+
+
 def generate_public_key(person, try_standard_public_key):
 	""" generate public key 
 	This number has to be stricly between 1 and n_totient, also coprime to n.
 	"""
 	import random
 
-	if try_standard_public_key == True:
 
-		### check if we can use the standard 65537 for public key
-		if (65537 < person.n and is_coprime(65537, person.n_totient)):
-			return 65537
+	### check if we can use the standard 65537 for public key
+	if (65537 < person.n and is_coprime(65537, person.n_totient)):
+		return 65537
 
-	potential_public_keys = []
+	potential_public_keys = random.shuffle(range(person.n_totient/2,person.n_totient))
 
-	# check all numbers between 1 and n_totient
-	for ii in range(1, person.n_totient ):
+	# check all numbers between n/2 and n_totient
+	# would nornmally check between 1 and n_totient
+	for ii in potential_public_keys:
 
 		# if number is coprime to totient 
 		if is_coprime(ii, person.n_totient):
 
-			# ad to potential keys
-			potential_public_keys.append(ii)
-
-	# choose the largest public key		
-	e_public_key = random.choice(potential_public_keys)
+			# use as public keys
+			e_public_key = ii
+			break
 
 	return e_public_key
 
 def generate_private_key(person):
+	import math
 	""" generate private keys 
 	need to calculate the modular multiplicative 
 	inverse of e (mod totient(n))
@@ -107,18 +113,10 @@ def generate_private_key(person):
 	"""
 
 	e_public_key = person.e_public_key
-	n_totient = person.n_totient
-	n = person.n
+	p = person.p
+	q = person.q
 
-	# check all the numbers from 1 to n
-	for ii in range(1, n):
-
-		x = (e_public_key*ii) % n_totient
-
-		#if  ii is the inverse of e, break
-		if x == 1:
-			d_private_key = ii
-			break
+	d_private_key = modinv(e_public_key, ((p-1)*(q-1)))
 
 	return d_private_key
 
@@ -172,27 +170,20 @@ def ba_integer_to_binary(m):
 	return ba, tuple(blist)
 
 def encrypt_message(m, person):
-	"""encrypt message as (m^e) mod(n)"""
+	"""encrypt message as (m^e) mod(n)
+	"""
+	encrypted_message = pow(
+		m, person.e_public_key, person.n)		
 
-	encrypted_message = 1
-
-	#take modulo on every iteration so we don't run out of space
-	for ii in range(person.e_public_key):
-
-		encrypted_message = (encrypted_message * m) % person.n
-	
 	return encrypted_message
 
 def decrypt_message(encrypted_message, person):
-	"""decrypt message as ( encrypted_message ^ d) mod(n)"""
+	"""decrypt message as ( encrypted_message ^ d) mod(n)
+	"""
 
-	decrypted_message = 1
+	decrypted_message = pow(
+		encrypted_message, person.d_private_key, person.n )	
 
-	#take modulo on every iteration so we don't run out of space
-	for ii in range(person.d_private_key):
-
-		decrypted_message = (decrypted_message * encrypted_message) % person.n
-	
 	return decrypted_message
 
 def knowledge_table(table_data):
@@ -234,19 +225,39 @@ def main():
 	print "STAGE 1: PUBLIC KEY GENERATION"
 
 	### make alice receiver and generate key pairs
-	prime_str = "\nAlice begins by choosing two large prime numbers which she will use to generate her keys.\n"
+	print "\nAlice begins by choosing two large prime numbers which she will use to generate her keys.\n"
 
-	print prime_str
 
-	p = int(raw_input('Please input the first prime number, p, for Alice to use: '))
+	input_str = 'Please input the first prime number, p > %d = 2^%d, for Alice to use (or press enter to use default): '%(
+		2**(8*len(message_string)), 8*len(message_string))
+
+	p = raw_input(input_str)
 	
-	if not isPrime(p):
-		print "The value you have chosen for p is not prime"
+	if not p:
+		p = 3628273133
+		print "p = %d\n" %p
+	else:
+		p = int(p)	
 
-	q = int(raw_input('Now input the second prime number, q, for Alice to use: '))
+		if not isPrime(p):
+			print "The value you have chosen for p is not prime"
 
-	if not isPrime(q):
-		print "The value you have chosen for q is not prime"
+	input_str = 'Now input the second prime number, q > %d = 2^%d, for Alice to use (or press enter to use default): ' %(
+		2**(8*len(message_string)) , 8*len(message_string)) 		
+
+	q = raw_input(input_str)
+
+	if not q:
+		q = 36413321723440003717
+		print "q =  %d\n" %q
+	else:
+		q = int(q)	
+
+		if not isPrime(q):
+			print "The value you have chosen for q is not prime"
+
+			
+
 
 	#alice = sender(8311,101,False)	
 	alice = receiver(p,q,False)
@@ -255,7 +266,7 @@ def main():
 		alice.p, alice.q, alice.n) 
 
 	print "\nand choose her public exponent, e,\nwhich can be any integer such that 1 < e < phi(n) and gcd(e, phi(n)) = 1"
-	
+
 	print "\nFor example, here suppose Alice chooses her public exponent to be e = %d, as gcd(%d,%d) = %d\n" %(
 	alice.e_public_key, alice.e_public_key, alice.n_totient,
 	gcd(alice.e_public_key, alice.n_totient)  )	
@@ -332,8 +343,10 @@ def main():
 
 
 	print "For example, here the message has become:\n" 
-	print '\t%s ->' %message_string, btuple , "-> %d" %M1
-
+	
+	print "\tPlain text: %s\n" %message_string
+	print "\tBinary representation of plain text:\n\t", btuple 
+	print "\n\tDecimal representation of plain text: %d" %M1
 
 	print "\n- - - - - - - - - - - - - - - "
 
@@ -409,10 +422,22 @@ def main():
 	### convert plain text integer to readable text
 	ba, ba_tuple = ba_integer_to_binary(decrypted_value)
 
+
+
+	print 
+
+	pdb.set_trace()
+
+
 	decrypted_message = ba.tostring()
 
+
 	print "\nFor example, here the message received by Alice is:\n" 
-	print '\t%d ->' %decrypted_value, ba_tuple , "-> %s" %decrypted_message
+	
+
+	print "\tDecimal representation of plain text message: %d", decrypted_value
+	print "\n\tBinary representation of plain text message:\n\t", ba_tuple 
+	print "\n\tDecoded message: %s\n" %decrypted_message
 
 	print "\nwhich should be the message Bob sent her in the first place"
 

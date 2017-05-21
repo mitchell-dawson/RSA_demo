@@ -36,3 +36,5 @@ toy python demo of how a private message can be sent publicly using RSA encrypti
 10. https://pypi.python.org/pypi/bitarray/
 11. https://styere.000webhostapp.com/RSAdemo.html
 12. https://www.tutorialspoint.com/cryptography/public_key_encryption.htm
+13. https://en.wikipedia.org/wiki/Exponentiation_by_squaring
+14. http://stackoverflow.com/questions/4798654/modular-multiplicative-inverse-function-in-python
