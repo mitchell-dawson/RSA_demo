@@ -301,6 +301,8 @@ def main():
 
 	print "\nand choose her public exponent, e,\nwhich can be any integer such that 1 < e < phi(n) and gcd(e, phi(n)) = 1"
 
+	print "\nwhere phi(n) = (p-1)*(q-1) = Euler's totient function = the number of integers less than n that are coprime to n"
+
 	print "\nFor example, here suppose Alice chooses her public exponent to be e = %d, as gcd(%d,%d) = %d\n" %(
 	alice.e_public_key, alice.e_public_key, alice.n_totient,
 	gcd(alice.e_public_key, alice.n_totient)  )	
@@ -327,9 +329,7 @@ def main():
 
 	print "\nAlice can now distribute her public key, (n,e), with confidence that her private key cannot be deduced from this public information."
 
-	print "\nThis is because the function which transforms the plain text into the cipher text can only be unencrypted with knowledge of the private key." 
-
-	print "\nHowever, calculating the private key from the public key is equivalent to factoring the RSA modulus n into the constituent primes p and q."
+	print "\nThis is because calculating the private key from the public key is equivalent to factoring the RSA modulus n into the constituent primes p and q."
 
 	print "\nFor large values of p and q, this factoring takes a very long time."
 
@@ -456,17 +456,13 @@ def main():
 	### convert plain text integer to readable text
 	ba, ba_tuple = ba_integer_to_binary(decrypted_value)
 
-
-
-	print 
-
 	decrypted_message = ba.tostring()
 
 
 	print "\nFor example, here the message received by Alice is:\n" 
 	
 
-	print "\tDecimal representation of plain text message: %d", decrypted_value
+	print "\tDecimal representation of plain text message: %d" %decrypted_value
 	print "\n\tBinary representation of plain text message:\n\t", ba_tuple 
 	print "\n\tDecoded message: %s\n" %decrypted_message
 
