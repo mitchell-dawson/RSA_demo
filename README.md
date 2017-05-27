@@ -1,6 +1,6 @@
 # RSA_demo
 
-toy python demo of how a private message can be sent publicly using RSA encryption
+toy python demo of how a private message can be sent publicly using textbook RSA encryption (no message padding)
 
 ### Requirements
 
@@ -15,12 +15,6 @@ toy python demo of how a private message can be sent publicly using RSA encrypti
 * Run the demonstration script
 	* `python RSA_demo.py`	
 * Read and follow the prompts in the script
-
-### Example parameters
-
-* message = `hi`
-* p = 101
-* q = 8311
 
 ### References
 

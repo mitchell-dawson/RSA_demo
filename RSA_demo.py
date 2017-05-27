@@ -12,15 +12,15 @@ class receiver(object):
 		self.q = q
 		self.n = p*q
 
-		print "calculating phi(n)"
+		#print "calculating phi(n)"
 
 		self.n_totient = phi(self.p, self.q)
 
-		print "choosing public key"
+		#print "choosing public key"
 
 		self.e_public_key = generate_public_key(self, try_standard_public_key)
 
-		print "generating private key"
+		#print "generating private key"
 
 		self.d_private_key = generate_private_key(self)
 
@@ -193,11 +193,67 @@ def knowledge_table(table_data):
 
 	print table.table
 
-class interceptor(object):
-	"""docstring for interceptor"""
-	def __init__(self, arg):
-		super(interceptor, self).__init__()
-		self.arg = arg
+def choose_prime(len_string):
+
+	import bisect
+
+
+
+	p_potential = [263, 
+	86453,
+	21335779,
+	5513600773,	
+	597655503030737,
+	4564564564564561,
+	12345678910987654321,
+	61654440233248340616559, 
+	197352587024076973231046657,
+	1119416189101109149181191199,  
+	77777733222232222222222222223,
+	46891012152021222527303233355051,
+	1219113036371115975795111736303119121,
+	23456789123456789123456789123456789123,
+	958619577835947143938319314151899378973,
+	13763761774552805635707475936358698644919801,
+	74462898442155373703893556749928174163166777,
+	357535753575357535753575357535753575357535753,
+	14000000000000000000000000000000000000000000041,
+	196831562512167926168594913337521971331729343125271]
+
+
+
+
+	q_potential = [1949, 
+	102001,
+	1000075057,
+	1099511628401, 
+	1235711131175321,
+	32462531054272512000001,
+	61654440233248340616559, 
+	1101111011009001101111011,
+	4641588833612778892410076351,
+	26252422212018161514121098641,
+	8939662423123592347173339993799, 
+	18133392183093337273339038129333181,
+	6666666666666666666666666666666666666666641,
+	11243941652563674986498110100111211214413169,
+	99999999988888888777777766666655555233424443,
+	123511311277095381527116483919737333174440041,
+	9001000021200032001100483237793193978070200007,
+	158014343936441708948923317088308354657418884731,
+	1468910121415161820212224252627283032333435363839,
+	1234123412341234123412341234123412341234123412341234123]
+
+	p = p_potential[len_string-1]
+
+	q = q_potential[len_string-1]
+
+	return p,q
+
+
+def validate_number():
+	pass
+
 
 def main():
 
@@ -216,9 +272,16 @@ def main():
 
 
 	### user choose a message to send
-	message_string = raw_input('Please choose a short message for Bob to send to Alice: ')
+	message_under_21 = False
 
-	message_string = message_string.strip()
+	while not message_under_21:
+
+		message_string = raw_input('Please choose a short message for Bob to send to Alice (under 20 characters): ')
+
+		message_string = message_string.strip()
+
+		if len(message_string) < 21:
+			message_under_21 = True
 
 	print "\n- - - - - - - - - - - - - - - "
 
@@ -227,39 +290,10 @@ def main():
 	### make alice receiver and generate key pairs
 	print "\nAlice begins by choosing two large prime numbers which she will use to generate her keys.\n"
 
+	p, q = choose_prime(len(message_string))
 
-	input_str = 'Please input the first prime number, p > %d = 2^%d, for Alice to use (or press enter to use default): '%(
-		2**(8*len(message_string)), 8*len(message_string))
+	print "In this case, Alice chooses:\n\tp = %d\n\tq = %d" %(p,q)
 
-	p = raw_input(input_str)
-	
-	if not p:
-		p = 3628273133
-		print "p = %d\n" %p
-	else:
-		p = int(p)	
-
-		if not isPrime(p):
-			print "The value you have chosen for p is not prime"
-
-	input_str = 'Now input the second prime number, q > %d = 2^%d, for Alice to use (or press enter to use default): ' %(
-		2**(8*len(message_string)) , 8*len(message_string)) 		
-
-	q = raw_input(input_str)
-
-	if not q:
-		q = 36413321723440003717
-		print "q =  %d\n" %q
-	else:
-		q = int(q)	
-
-		if not isPrime(q):
-			print "The value you have chosen for q is not prime"
-
-			
-
-
-	#alice = sender(8311,101,False)	
 	alice = receiver(p,q,False)
 
 	print "\nAlice can now calculate her RSA modulus: n = p*q = %d*%d = %d ..." %(
@@ -425,9 +459,6 @@ def main():
 
 
 	print 
-
-	pdb.set_trace()
-
 
 	decrypted_message = ba.tostring()
 
